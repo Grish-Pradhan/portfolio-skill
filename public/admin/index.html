@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Dashboard | Portfolio</title>
+  <link rel="stylesheet" href="/admin/admin.css?v=2">
+</head>
+<body>
+  <div id="loginView" class="login-wrap">
+    <div class="login-card">
+      <div class="brand">◆ PORTFOLIO ADMIN</div>
+      <h1>Welcome back.</h1>
+      <p>Enter your admin token to manage the portfolio.</p>
+      <form id="loginForm">
+        <input id="tokenInput" type="password" placeholder="Admin token" required autofocus>
+        <button>Sign in →</button>
+        <div id="loginStatus" class="status"></div>
+      </form>
+      <a href="/" class="back">← View portfolio</a>
+    </div>
+  </div>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand">◆ ADMIN</div>
+      <nav>
+        <button class="nav-item active" data-section="overview">Overview</button>
+        <button class="nav-item" data-section="projects">Projects</button>
+        <button class="nav-item" data-section="profile">Profile</button>
+        <button class="nav-item" data-section="messages">Messages</button>
+      </nav>
+      <div class="side-bottom">
+        <a href="/" target="_blank">View site ↗</a>
+        <button id="logout">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">CONTROL PANEL</span>
+          <h2 id="pageTitle">Overview</h2>
+        </div>
+        <span class="secure">● SECURE SESSION</span>
+      </header>
+
+      <section id="overview" class="page active">
+        <div class="stats">
+          <div class="stat"><small>PROJECTS</small><strong id="statProjects">0</strong></div>
+          <div class="stat"><small>MESSAGES</small><strong id="statMessages">0</strong></div>
+          <div class="stat"><small>FEATURED</small><strong id="statFeatured">0</strong></div>
+        </div>
+        <div class="panel intro">
+          <span class="big-mark">◆</span>
+          <div>
+            <h3>Your portfolio is live.</h3>
+            <p>Use the sidebar to manage projects, update your public profile, or review messages sent through the contact form.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="projects" class="page">
+        <div class="section-title">
+          <div><h3>Projects</h3><p>Manage the projects displayed on your portfolio.</p></div>
+          <button class="button" id="newProject">+ New project</button>
+        </div>
+        <div id="projectsList" class="project-list"></div>
+      </section>
+
+      <section id="profile" class="page">
+        <div class="section-title"><div><h3>Profile</h3><p>This information appears on your public portfolio.</p></div></div>
+        <form id="profileForm" class="panel form-grid">
+          <label>Name<input name="name" required></label>
+          <label>Role<input name="role" required></label>
+          <label class="full">Bio<textarea name="bio" rows="5" required></textarea></label>
+          <label>Location<input name="location"></label>
+          <label>Email<input name="email" type="email"></label>
+          <label>GitHub<input name="github"></label>
+          <label>LinkedIn<input name="linkedin"></label>
+          <label>Website<input name="website"></label>
+          <div class="full form-actions"><button class="button">Save profile</button><span id="profileStatus"></span></div>
+        </form>
+      </section>
+
+      <section id="messages" class="page">
+        <div class="section-title"><div><h3>Messages</h3><p>Messages submitted through your public contact form.</p></div></div>
+        <div id="messagesList" class="messages"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="projectModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head"><h3 id="modalTitle">New project</h3><button id="closeModal">×</button></div>
+      <form id="projectForm" class="form-grid">
+        <input type="hidden" name="id">
+        <label>Title<input name="title" required></label>
+        <label>Technology<input name="tech" placeholder="Docker, Node.js, Linux"></label>
+        <label class="full">Description<textarea name="description" rows="5" required></textarea></label>
+        <label>Live URL<input name="url" placeholder="https://..."></label>
+        <label>GitHub URL<input name="github" placeholder="https://github.com/..."></label>
+        <label class="full">Image URL<input name="image" placeholder="Optional image URL"></label>
+        <label class="check full"><input type="checkbox" name="featured"> Featured project</label>
+        <div class="full form-actions"><button class="button">Save project</button><span id="projectStatus"></span></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/admin/admin.js?v=2"></script>
+</body>
+</html>
