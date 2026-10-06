@@ -51,6 +51,34 @@
           <div class="stat"><small>MESSAGES</small><strong id="statMessages">0</strong></div>
           <div class="stat"><small>FEATURED</small><strong id="statFeatured">0</strong></div>
         </div>
+        <div class="analytics-grid">
+          <section class="panel activity-card" aria-labelledby="activityTitle">
+            <div class="chart-head">
+              <div>
+                <span class="chart-kicker">RECENT ACTIVITY</span>
+                <h3 id="activityTitle">Message activity</h3>
+                <p>Incoming messages from the last 7 days.</p>
+              </div>
+              <div class="chart-total"><strong id="chartTotal">0</strong><span>this week</span></div>
+            </div>
+            <div id="activityChart" class="activity-chart" role="img" aria-label="Message activity for the last 7 days"></div>
+            <div class="chart-legend"><span><i class="legend-dot"></i> Messages received</span><span id="chartPeak">No activity yet</span></div>
+          </section>
+          <section class="panel health-card" aria-labelledby="healthTitle">
+            <div class="chart-head">
+              <div>
+                <span class="chart-kicker">PORTFOLIO SNAPSHOT</span>
+                <h3 id="healthTitle">Portfolio health</h3>
+              </div>
+              <span class="health-orbit">◆</span>
+            </div>
+            <div class="donut-wrap">
+              <div id="featuredDonut" class="donut"><div><strong id="featuredPercent">0%</strong><span>featured</span></div></div>
+              <div class="donut-copy"><strong id="healthHeadline">Ready to grow</strong><p id="healthCopy">Add a featured project to give your work a stronger first impression.</p></div>
+            </div>
+            <div class="health-list"><div><span class="health-dot lime"></span><span>Featured projects</span><strong id="healthFeatured">0</strong></div><div><span class="health-dot orange"></span><span>Other projects</span><strong id="healthOther">0</strong></div></div>
+          </section>
+        </div>
         <div class="panel intro">
           <span class="big-mark">◆</span>
           <div>

@@ -57,9 +57,46 @@ async function loadAll() {
     $("#statProjects").textContent = projects.length;
     $("#statMessages").textContent = messages.length;
     $("#statFeatured").textContent = projects.filter(p => p.featured).length;
+    renderOverviewChart(projects, messages);
   } catch (e) {
     if (e.message === "Unauthorized") location.reload();
   }
+}
+
+function renderOverviewChart(projects, messages) {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const days = Array.from({length: 7}, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (6 - index));
+    return date;
+  });
+  const counts = days.map(day => messages.filter(message => {
+    const created = new Date(message.created_at);
+    return created.toDateString() === day.toDateString();
+  }).length);
+  const max = Math.max(...counts, 1);
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  const peak = Math.max(...counts);
+  const peakIndex = counts.indexOf(peak);
+  const featured = projects.filter(project => project.featured).length;
+  const other = projects.length - featured;
+  const percent = projects.length ? Math.round((featured / projects.length) * 100) : 0;
+
+  $("#chartTotal").textContent = total;
+  $("#chartPeak").textContent = peak ? `Busiest: ${days[peakIndex].toLocaleDateString(undefined, {weekday:"short"})}` : "No activity yet";
+  $("#activityChart").innerHTML = counts.map((count, index) => {
+    const label = days[index].toLocaleDateString(undefined, {weekday:"short"});
+    const height = count ? Math.max((count / max) * 100, 12) : 5;
+    return `<div class="chart-column" title="${label}: ${count} message${count === 1 ? "" : "s"}"><span class="chart-value">${count}</span><div class="bar-track"><div class="bar-fill" style="height:${height}%"></div></div><span class="chart-label">${label}</span></div>`;
+  }).join("");
+
+  $("#featuredDonut").style.setProperty("--donut-progress", `${percent * 3.6}deg`);
+  $("#featuredPercent").textContent = `${percent}%`;
+  $("#healthFeatured").textContent = featured;
+  $("#healthOther").textContent = other;
+  $("#healthHeadline").textContent = percent >= 50 ? "Strong showcase" : projects.length ? "Almost there" : "Ready to grow";
+  $("#healthCopy").textContent = percent >= 50 ? "Your best work is easy to spot at a glance." : projects.length ? "Feature more work to make your strongest projects stand out." : "Add a featured project to give your work a stronger first impression.";
 }
 
 function renderProjects(projects) {
