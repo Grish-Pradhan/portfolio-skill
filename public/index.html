@@ -10,7 +10,7 @@
 <body>
   <div class="noise"></div>
   <header class="nav">
-    <a class="brand" href="#home"><span class="brand-mark">✳</span><span>PORTFOLIO</span></a>
+    <a class="brand" href="#home" aria-label="Grish Pradhan portfolio home"><span class="brand-mark">✳</span><span>GRISH / PORTFOLIO</span></a>
     <div class="nav-meta"><span class="status-dot"></span> AVAILABLE FOR SELECT PROJECTS</div>
     <button class="menu" aria-label="Toggle menu" aria-expanded="false">☰</button>
     <nav>
@@ -26,6 +26,7 @@
     <section id="home" class="hero section">
       <div class="hero-copy">
         <p class="eyebrow">FULL-STACK · SECURITY · AUTOMATION</p>
+        <div class="hero-badge"><span class="badge-spark">✦</span> Building secure digital experiences</div>
         <div class="hero-kicker"><span>01</span><span class="kicker-line"></span><span>BASED IN <b id="heroLocation">NEPAL</b></span></div>
         <h1>Building things<br><span>that matter.</span></h1>
         <p id="heroRole" class="role">Security Researcher & Full-Stack Developer</p>
@@ -34,6 +35,12 @@
           <a class="button primary" href="#projects">View Projects</a>
           <a class="button ghost" href="#contact">Let's Talk ↗</a>
         </div>
+        <div class="hero-stats" aria-label="Portfolio highlights">
+          <div><strong>24/7</strong><span>curiosity</span></div>
+          <div><strong id="heroProjectCount">—</strong><span>selected builds</span></div>
+          <div><strong id="heroCertificateCount">—</strong><span>credentials</span></div>
+        </div>
+        <a class="scroll-cue" href="#about"><span class="scroll-line"></span><span>SCROLL TO EXPLORE</span></a>
       </div>
       <div class="hero-card">
         <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
@@ -74,6 +81,13 @@
           <h2>Things I've built<br><span>&amp; earned.</span></h2>
         </div>
         <span class="count"><b id="projectCount">0 projects</b><span> / SELECTED WORK &amp; CREDENTIALS</span></span>
+      </div>
+      <div class="section-tools" aria-label="Project filters">
+        <div class="filter-pills" role="group" aria-label="Filter projects">
+          <button class="filter-pill active" type="button" data-project-filter="all">All work</button>
+          <button class="filter-pill" type="button" data-project-filter="featured">Featured</button>
+        </div>
+        <label class="search-field"><span>⌕</span><input id="projectSearch" type="search" placeholder="Search projects" aria-label="Search projects"></label>
       </div>
       <div id="projectsGrid" class="projects"></div>
     </section>

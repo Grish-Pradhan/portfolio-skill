@@ -1,4 +1,7 @@
 const $ = (s) => document.querySelector(s);
+let portfolioProjects = [];
+let activeProjectFilter = "all";
+let projectQuery = "";
 
 async function loadPortfolio() {
   try {
@@ -10,6 +13,7 @@ async function loadPortfolio() {
     const profile = await profileRes.json();
     const projects = await projectsRes.json();
     const certificates = await certificatesRes.json();
+    portfolioProjects = projects;
 
     document.title = `${profile.name} | Portfolio`;
     $("#heroBio").textContent = profile.bio;
@@ -26,8 +30,26 @@ async function loadPortfolio() {
     if (profile.linkedin) $("#linkedin").href = profile.linkedin;
 
     $("#projectCount").textContent = `${projects.length} project${projects.length === 1 ? "" : "s"}`;
+    animateNumber($("#heroProjectCount"), projects.length);
+    animateNumber($("#heroCertificateCount"), certificates.length);
+    renderProjects();
+    renderCertificates(certificates);
+  } catch (err) {
+    $("#heroBio").textContent = "Currently refining the portfolio experience — check back shortly.";
+    $("#projectsGrid").innerHTML = '<div class="empty-state api-state"><strong>Portfolio data is taking a moment.</strong><span>The visual experience is ready; live content will return shortly.</span></div>';
+    $("#certificatesGrid").innerHTML = '<div class="empty-state api-state"><strong>Credentials are loading.</strong><span>Please refresh in a moment.</span></div>';
+  }
+}
 
-    $("#projectsGrid").innerHTML = projects.map((p, i) => {
+function renderProjects() {
+  const grid = $("#projectsGrid");
+  const filtered = portfolioProjects.filter(project => {
+    const matchesFilter = activeProjectFilter === "all" || Boolean(project.featured);
+    const haystack = `${project.title} ${project.description} ${project.tech}`.toLowerCase();
+    return matchesFilter && (!projectQuery || haystack.includes(projectQuery));
+  });
+  grid.setAttribute("aria-busy", "false");
+  grid.innerHTML = filtered.length ? filtered.map((p, i) => {
       const imageUrl = p.image ? safeUrl(p.image) : "";
       const hasImage = Boolean(imageUrl && imageUrl !== "#");
       return `
@@ -45,11 +67,7 @@ async function loadPortfolio() {
         </div>
       </article>
     `;
-    }).join("");
-    renderCertificates(certificates);
-  } catch (err) {
-    $("#heroBio").textContent = "Portfolio API is unavailable. Check the Docker container logs.";
-  }
+  }).join("") : '<div class="empty-state api-state"><strong>No matching projects.</strong><span>Try another search or switch back to all work.</span></div>';
 }
 
 function renderCertificates(certificates) {
@@ -84,6 +102,18 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"});
 }
 
+function animateNumber(element, target) {
+  if (!element) return;
+  const duration = 700;
+  const start = performance.now();
+  const tick = now => {
+    const progress = Math.min((now - start) / duration, 1);
+    element.textContent = Math.round(target * (1 - Math.pow(1 - progress, 3)));
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 $("#contactForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const status = $("#formStatus");
@@ -114,10 +144,45 @@ document.querySelectorAll("nav a").forEach(a => a.addEventListener("click", () =
   $(".menu").setAttribute("aria-expanded", "false");
 }));
 
+document.querySelectorAll("[data-project-filter]").forEach(button => button.addEventListener("click", () => {
+  activeProjectFilter = button.dataset.projectFilter;
+  document.querySelectorAll("[data-project-filter]").forEach(item => item.classList.toggle("active", item === button));
+  renderProjects();
+}));
+$("#projectSearch").addEventListener("input", event => {
+  projectQuery = event.target.value.trim().toLowerCase();
+  renderProjects();
+});
+
 const revealObserver = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
   entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); revealObserver.unobserve(entry.target); } });
 }, { threshold: 0.12 }) : null;
 document.querySelectorAll(".section").forEach(section => revealObserver ? revealObserver.observe(section) : section.classList.add("is-visible"));
+
+const sectionLinks = [...document.querySelectorAll("nav a")];
+const sectionObserver = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    sectionLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`));
+  });
+}, { rootMargin: "-35% 0px -55% 0px" }) : null;
+document.querySelectorAll("main section[id]").forEach(section => sectionObserver ? sectionObserver.observe(section) : null);
+
+const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+if (canHover) {
+  const heroCard = $(".hero-card");
+  heroCard.addEventListener("pointermove", event => {
+    const rect = heroCard.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - .5;
+    const y = (event.clientY - rect.top) / rect.height - .5;
+    heroCard.style.setProperty("--tilt-x", `${(-y * 5).toFixed(2)}deg`);
+    heroCard.style.setProperty("--tilt-y", `${(x * 7).toFixed(2)}deg`);
+  });
+  heroCard.addEventListener("pointerleave", () => {
+    heroCard.style.setProperty("--tilt-x", "0deg");
+    heroCard.style.setProperty("--tilt-y", "0deg");
+  });
+}
 
 function projectIcon(index) {
   return ["↗", "⌘", "◌", "✦", "⌁"][index % 5];
