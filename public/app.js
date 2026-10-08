@@ -1,29 +1,15 @@
 const $ = (s) => document.querySelector(s);
 
-const certificates = [
-  { title: "APISEC Certified Practitioner", issuer: "APISEC University", date: "Mar 25, 2026", image: "ACP.png", document: "", verify: "https://www.credly.com/badges/f0bdbfa5-d95b-44f2-b0fb-62c2f1f7fd3b", tags: ["API Security", "Certification"] },
-  { title: "Certified API Security Analyst", issuer: "APISEC University", date: "Mar 14, 2026", image: "casa-grish.png", document: "CASAExam20260314-33-x7ztkv.pdf", verify: "https://www.credly.com/badges/ffe66c83-e901-4977-9cb3-fc55a7aa9485", tags: ["API Security", "Analysis"] },
-  { title: "Certified Threat Intelligence & Governance Analyst", issuer: "Red Team Leaders", date: "Jan 11, 2026", image: "CTIGA.jpg", verify: "https://courses.redteamleaders.com/exam-completion/57815fb39704a13c", tags: ["Threat Intelligence", "Governance"] },
-  { title: "Certified Red Team Operations Management", issuer: "Red Team Leaders", date: "Dec 26, 2025", image: "crtom.png", verify: "https://courses.redteamleaders.com/exam-completion/898fc2d5c46bf502", tags: ["Red Team", "Operations"] },
-  { title: "Advent of Cyber 2025", issuer: "TryHackMe", date: "Dec 25, 2025", image: "THM-2025-1.png", document: "THM-2025.pdf", tags: ["Cybersecurity", "Challenges"] },
-  { title: "Introduction to Penetration Testing", issuer: "Security Blue Team", date: "Nov 26, 2025", image: "Introduction to Penetration Testing-course_page-0001.jpg", document: "Introduction to Penetration Testing-course.pdf", tags: ["Penetration Testing", "Foundations"] },
-  { title: "Web Fundamentals", issuer: "TryHackMe", date: "May 1, 2025", image: "webfundamental.png", document: "thm-webfundamentals.pdf", tags: ["Web Security", "Fundamentals"] },
-  { title: "Jr Penetration Tester", issuer: "TryHackMe", date: "May 1, 2025", image: "jrpentest.png", document: "THM-CF9KJ3JXBX.pdf", tags: ["Pentesting", "Learning Path"] },
-  { title: "Cyber Security 101", issuer: "TryHackMe", date: "Apr 24, 2025", image: "101.png", document: "thm-101.pdf", tags: ["Cybersecurity", "Learning Path"] },
-  { title: "Scenario-Based CW-OS", issuer: "Certificate document", date: "Certificate PDF", image: "", document: "scenerio based CW-OS.pdf", tags: ["Security", "Scenario"] },
-  { title: "Security Certificate", issuer: "Certificate document", date: "Certificate PDF", image: "", document: "certified_certificate.pdf", tags: ["Security"] },
-  { title: "Security Certificate I", issuer: "Certificate document", date: "Certificate PDF", image: "", document: "certified_certificate1.pdf", tags: ["Security"] },
-  { title: "Red Team Certificate", issuer: "Certificate document", date: "Certificate PDF", image: "", document: "certified_red_certificate.pdf", tags: ["Red Team"] }
-];
-
 async function loadPortfolio() {
   try {
-    const [profileRes, projectsRes] = await Promise.all([
+    const [profileRes, projectsRes, certificatesRes] = await Promise.all([
       fetch("/api/profile"),
-      fetch("/api/projects")
+      fetch("/api/projects"),
+      fetch("/api/certificates")
     ]);
     const profile = await profileRes.json();
     const projects = await projectsRes.json();
+    const certificates = await certificatesRes.json();
 
     document.title = `${profile.name} | Portfolio`;
     $("#heroBio").textContent = profile.bio;
@@ -60,20 +46,21 @@ async function loadPortfolio() {
       </article>
     `;
     }).join("");
-    renderCertificates();
+    renderCertificates(certificates);
   } catch (err) {
     $("#heroBio").textContent = "Portfolio API is unavailable. Check the Docker container logs.";
   }
 }
 
-function renderCertificates() {
+function renderCertificates(certificates) {
   const grid = $("#certificatesGrid");
   if (!grid) return;
   $("#certificateCount").textContent = `${certificates.length} certificate${certificates.length === 1 ? "" : "s"}`;
-  grid.innerHTML = certificates.map((certificate, index) => {
-    const imageUrl = certificate.image ? `/certificates/${encodeURIComponent(certificate.image)}` : "";
-    const documentUrl = certificate.document ? `/certificates/${encodeURIComponent(certificate.document)}` : imageUrl;
-    const verifyUrl = certificate.verify || documentUrl;
+  grid.innerHTML = certificates.length ? certificates.map((certificate, index) => {
+    const imageUrl = certificate.image_url ? safeUrl(certificate.image_url) : "";
+    const documentUrl = certificate.document_url ? safeUrl(certificate.document_url) : imageUrl;
+    const verifyUrl = safeUrl(certificate.credential_url || certificate.document_url || certificate.image_url || "#");
+    const tags = (certificate.description || "Credential").split(/[,.]/).filter(Boolean).slice(0, 2);
     return `
       <article class="certificate-card" style="--certificate-index:${index}">
         <a class="certificate-visual ${imageUrl ? "has-image" : "pdf-visual"}" href="${verifyUrl}" target="_blank" rel="noreferrer" aria-label="Open ${escapeHtml(certificate.title)}">
@@ -81,14 +68,20 @@ function renderCertificates() {
           <span class="certificate-overlay">OPEN CREDENTIAL ↗</span>
         </a>
         <div class="certificate-body">
-          <div class="certificate-meta"><span>${String(index + 1).padStart(2, "0")}</span><span>${escapeHtml(certificate.date)}</span></div>
+          <div class="certificate-meta"><span>${String(index + 1).padStart(2, "0")}</span><span>${escapeHtml(formatDate(certificate.issued_on))}</span></div>
           <h3>${escapeHtml(certificate.title)}</h3>
           <p>${escapeHtml(certificate.issuer)}</p>
-          <div class="certificate-tags">${certificate.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
-          <div class="certificate-actions"><a href="${verifyUrl}" target="_blank" rel="noreferrer">${certificate.verify ? "VERIFY BADGE" : "VIEW CERTIFICATE"} ↗</a>${certificate.document ? `<a href="${documentUrl}" target="_blank" rel="noreferrer">PDF ↗</a>` : ""}</div>
+          <div class="certificate-tags">${tags.map(tag => `<span>${escapeHtml(tag.trim())}</span>`).join("")}</div>
+          <div class="certificate-actions"><a href="${verifyUrl}" target="_blank" rel="noreferrer">${certificate.credential_url ? "VERIFY CREDENTIAL" : "VIEW CERTIFICATE"} ↗</a>${certificate.document_url ? `<a href="${documentUrl}" target="_blank" rel="noreferrer">PDF ↗</a>` : ""}</div>
         </div>
       </article>`;
-  }).join("");
+  }).join("") : '<div class="empty-state">Certificates will appear here as they are added.</div>';
+}
+
+function formatDate(value) {
+  if (!value) return "Credential";
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"});
 }
 
 $("#contactForm").addEventListener("submit", async (e) => {
@@ -120,6 +113,11 @@ document.querySelectorAll("nav a").forEach(a => a.addEventListener("click", () =
   $("nav").classList.remove("open");
   $(".menu").setAttribute("aria-expanded", "false");
 }));
+
+const revealObserver = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
+  entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); revealObserver.unobserve(entry.target); } });
+}, { threshold: 0.12 }) : null;
+document.querySelectorAll(".section").forEach(section => revealObserver ? revealObserver.observe(section) : section.classList.add("is-visible"));
 
 function projectIcon(index) {
   return ["↗", "⌘", "◌", "✦", "⌁"][index % 5];

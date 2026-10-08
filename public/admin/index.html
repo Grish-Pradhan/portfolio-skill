@@ -27,6 +27,7 @@
       <nav>
         <button class="nav-item active" data-section="overview">Overview</button>
         <button class="nav-item" data-section="projects">Projects</button>
+        <button class="nav-item" data-section="certificates">Certificates</button>
         <button class="nav-item" data-section="profile">Profile</button>
         <button class="nav-item" data-section="messages">Messages</button>
       </nav>
@@ -50,6 +51,7 @@
           <div class="stat"><small>PROJECTS</small><strong id="statProjects">0</strong></div>
           <div class="stat"><small>MESSAGES</small><strong id="statMessages">0</strong></div>
           <div class="stat"><small>FEATURED</small><strong id="statFeatured">0</strong></div>
+          <div class="stat"><small>CERTIFICATES</small><strong id="statCertificates">0</strong></div>
         </div>
         <div class="analytics-grid">
           <section class="panel activity-card" aria-labelledby="activityTitle">
@@ -96,6 +98,11 @@
         <div id="projectsList" class="project-list"></div>
       </section>
 
+      <section id="certificates" class="page">
+        <div class="section-title"><div><h3>Certificates</h3><p>Manage credentials, verification links, and certificate artwork.</p></div><button class="button" id="newCertificate">+ New certificate</button></div>
+        <div id="certificatesList" class="certificate-admin-grid"></div>
+      </section>
+
       <section id="profile" class="page">
         <div class="section-title"><div><h3>Profile</h3><p>This information appears on your public portfolio.</p></div></div>
         <form id="profileForm" class="panel form-grid">
@@ -131,6 +138,24 @@
         <label class="full">Image URL<input name="image" placeholder="Optional image URL"></label>
         <label class="check full"><input type="checkbox" name="featured"> Featured project</label>
         <div class="full form-actions"><button class="button">Save project</button><span id="projectStatus"></span></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="certificateModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head"><h3 id="certificateModalTitle">New certificate</h3><button id="closeCertificateModal" aria-label="Close certificate editor">×</button></div>
+      <form id="certificateForm" class="form-grid">
+        <input type="hidden" name="id">
+        <label>Title<input name="title" required placeholder="APISEC Certified Practitioner"></label>
+        <label>Issuer<input name="issuer" required placeholder="APISEC University"></label>
+        <label>Date issued<input name="issued_on" type="date"></label>
+        <label>Verification URL<input name="credential_url" type="url" placeholder="https://..." /></label>
+        <label class="full">Image URL<input name="image_url" placeholder="/certificates/example.png"></label>
+        <label class="full">Original PDF URL<input name="document_url" placeholder="/certificates/example.pdf"></label>
+        <label class="full">Description<textarea name="description" rows="4" placeholder="What this credential demonstrates..."></textarea></label>
+        <label class="check full"><input type="checkbox" name="featured"> Featured certificate</label>
+        <div class="full form-actions"><button class="button">Save certificate</button><span id="certificateStatus"></span></div>
       </form>
     </div>
   </div>

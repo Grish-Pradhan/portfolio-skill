@@ -48,15 +48,17 @@ document.querySelectorAll(".nav-item").forEach(btn => {
 
 async function loadAll() {
   try {
-    const [projects, messages, profile] = await Promise.all([
-      api("/api/projects"), api("/api/admin/messages"), api("/api/profile")
+    const [projects, messages, profile, certificates] = await Promise.all([
+      api("/api/projects"), api("/api/admin/messages"), api("/api/profile"), api("/api/certificates")
     ]);
     renderProjects(projects);
     renderMessages(messages);
+    renderCertificates(certificates);
     fillProfile(profile);
     $("#statProjects").textContent = projects.length;
     $("#statMessages").textContent = messages.length;
     $("#statFeatured").textContent = projects.filter(p => p.featured).length;
+    $("#statCertificates").textContent = certificates.length;
     renderOverviewChart(projects, messages);
   } catch (e) {
     if (e.message === "Unauthorized") location.reload();
@@ -115,8 +117,16 @@ function renderMessages(messages) {
   $("#messagesList").innerHTML = messages.length ? messages.map(m => `
     <article class="message">
       <div><h4>${esc(m.name)}</h4><p>${esc(m.message)}</p></div>
-      <div class="meta">${esc(m.email)} · ${esc(m.created_at)}</div>
+      <div class="message-side"><div class="meta">${esc(m.email)} · ${esc(m.created_at)}</div><button class="small-btn delete" onclick="deleteMessage(${m.id})">Delete</button></div>
     </article>`).join("") : '<div class="panel" style="padding:25px;color:#969ba7">No messages yet.</div>';
+}
+
+function renderCertificates(certificates) {
+  $("#certificatesList").innerHTML = certificates.length ? certificates.map(c => `
+    <article class="certificate-admin-card">
+      ${c.image_url ? `<img src="${esc(c.image_url)}" alt="" loading="lazy">` : '<div class="certificate-placeholder">✦</div>'}
+      <div class="certificate-admin-copy"><div class="meta">${esc(c.issued_on || "Credential")}${c.featured ? " · FEATURED" : ""}</div><h4>${esc(c.title)}</h4><p>${esc(c.issuer)}</p><div class="row-actions"><button class="small-btn" onclick="editCertificate(${c.id})">Edit</button><button class="small-btn delete" onclick="deleteCertificate(${c.id})">Delete</button></div></div>
+    </article>`).join("") : '<div class="panel empty-panel">No certificates yet.</div>';
 }
 
 function fillProfile(p) {
@@ -153,6 +163,11 @@ window.deleteProject=async id=>{
   try { await api("/api/admin/projects/"+id,{method:"DELETE"}); loadAll(); } catch(e){alert(e.message);}
 };
 
+window.deleteMessage=async id=>{
+  if(!confirm("Delete this message?")) return;
+  try { await api("/api/admin/messages/"+id,{method:"DELETE"}); loadAll(); } catch(e){alert(e.message);}
+};
+
 $("#projectForm").onsubmit=async e=>{
   e.preventDefault();
   const f=e.target, id=f.elements.id.value;
@@ -165,6 +180,29 @@ $("#projectForm").onsubmit=async e=>{
     });
     $("#projectModal").classList.add("hidden"); loadAll();
   } catch(e){$("#projectStatus").textContent=e.message;}
+};
+
+function openCertificate(c={}) {
+  $("#certificateModal").classList.remove("hidden");
+  $("#certificateModalTitle").textContent = c.id ? "Edit certificate" : "New certificate";
+  const f = $("#certificateForm");
+  ["id","title","issuer","issued_on","credential_url","image_url","document_url","description"].forEach(k=>f.elements[k].value=c[k]||"");
+  f.elements.featured.checked=!!c.featured;
+}
+$("#newCertificate").onclick=()=>openCertificate();
+$("#closeCertificateModal").onclick=()=>$("#certificateModal").classList.add("hidden");
+window.editCertificate=async id=>openCertificate(await api("/api/certificates/"+id));
+window.deleteCertificate=async id=>{
+  if(!confirm("Delete this certificate?")) return;
+  try { await api("/api/admin/certificates/"+id,{method:"DELETE"}); loadAll(); } catch(e){alert(e.message);}
+};
+$("#certificateForm").onsubmit=async e=>{
+  e.preventDefault();
+  const f=e.target, id=f.elements.id.value, data=Object.fromEntries(new FormData(f));
+  data.featured=f.elements.featured.checked?1:0;
+  delete data.id;
+  try { await api("/api/admin/certificates"+(id?"/"+id:""),{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}); $("#certificateModal").classList.add("hidden"); loadAll(); }
+  catch(e){$("#certificateStatus").textContent=e.message;}
 };
 
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}

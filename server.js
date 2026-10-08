@@ -45,6 +45,19 @@ CREATE TABLE IF NOT EXISTS profile (
   linkedin TEXT DEFAULT '',
   website TEXT DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS certificates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  issuer TEXT NOT NULL,
+  issued_on TEXT DEFAULT '',
+  credential_url TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
+  document_url TEXT DEFAULT '',
+  description TEXT DEFAULT '',
+  featured INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 `);
 
 const count = db.prepare("SELECT COUNT(*) AS n FROM projects").get().n;
@@ -102,6 +115,31 @@ if (!profile) {
   );
 }
 
+const certificateCount = db.prepare("SELECT COUNT(*) AS n FROM certificates").get().n;
+if (!certificateCount) {
+  const insertCertificate = db.prepare(`
+    INSERT INTO certificates (title, issuer, issued_on, credential_url, image_url, document_url, description, featured)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const seedCertificates = [
+    ["APISEC Certified Practitioner", "APISEC University", "2026-03-25", "https://www.credly.com/badges/f0bdbfa5-d95b-44f2-b0fb-62c2f1f7fd3b", "/certificates/ACP.png", "", "API security practitioner certification.", 1],
+    ["Certified API Security Analyst", "APISEC University", "2026-03-14", "https://www.credly.com/badges/ffe66c83-e901-4977-9cb3-fc55a7aa9485", "/certificates/casa-grish.png", "/certificates/CASAExam20260314-33-x7ztkv.pdf", "API security analysis and assessment.", 1],
+    ["Certified Threat Intelligence & Governance Analyst", "Red Team Leaders", "2026-01-11", "https://courses.redteamleaders.com/exam-completion/57815fb39704a13c", "/certificates/CTIGA.jpg", "", "Threat intelligence, governance, and structured analysis.", 1],
+    ["Certified Red Team Operations Management", "Red Team Leaders", "2025-12-26", "https://courses.redteamleaders.com/exam-completion/898fc2d5c46bf502", "/certificates/crtom.png", "", "Red team operations management and adversary simulation.", 1],
+    ["Advent of Cyber 2025", "TryHackMe", "2025-12-25", "", "/certificates/THM-2025-1.png", "/certificates/THM-2025.pdf", "24 hands-on cybersecurity challenges.", 0],
+    ["Introduction to Penetration Testing", "Security Blue Team", "2025-11-26", "", "/certificates/Introduction%20to%20Penetration%20Testing-course_page-0001.jpg", "/certificates/Introduction%20to%20Penetration%20Testing-course.pdf", "Foundations of ethical hacking and penetration testing.", 0],
+    ["Web Fundamentals", "TryHackMe", "2025-05-01", "", "/certificates/webfundamental.png", "/certificates/thm-webfundamentals.pdf", "Web security fundamentals learning path.", 0],
+    ["Jr Penetration Tester", "TryHackMe", "2025-05-01", "", "/certificates/jrpentest.png", "/certificates/THM-CF9KJ3JXBX.pdf", "Practical penetration testing learning path.", 0],
+    ["Cyber Security 101", "TryHackMe", "2025-04-24", "", "/certificates/101.png", "/certificates/thm-101.pdf", "Cybersecurity fundamentals learning path.", 0],
+    ["Scenario-Based CW-OS", "Certificate document", "", "", "", "/certificates/scenerio%20based%20CW-OS.pdf", "Scenario-based security training.", 0],
+    ["Security Certificate", "Certificate document", "", "", "", "/certificates/certified_certificate.pdf", "Additional security credential.", 0],
+    ["Security Certificate I", "Certificate document", "", "", "", "/certificates/certified_certificate1.pdf", "Additional security credential.", 0],
+    ["Red Team Certificate", "Certificate document", "", "", "", "/certificates/certified_red_certificate.pdf", "Additional red team credential.", 0]
+  ];
+  const seed = db.transaction(() => seedCertificates.forEach(certificate => insertCertificate.run(...certificate)));
+  seed();
+}
+
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -136,6 +174,16 @@ app.get("/api/projects/:id", (req, res) => {
   res.json(project);
 });
 
+app.get("/api/certificates", (req, res) => {
+  res.json(db.prepare("SELECT * FROM certificates ORDER BY featured DESC, issued_on DESC, id DESC").all());
+});
+
+app.get("/api/certificates/:id", (req, res) => {
+  const certificate = db.prepare("SELECT * FROM certificates WHERE id = ?").get(req.params.id);
+  if (!certificate) return res.status(404).json({ error: "Certificate not found" });
+  res.json(certificate);
+});
+
 app.post("/api/contact", (req, res) => {
   const { name, email, message } = req.body || {};
   if (!name || !email || !message) {
@@ -154,6 +202,38 @@ app.post("/api/contact", (req, res) => {
 
 app.get("/api/admin/messages", requireAdmin, (req, res) => {
   res.json(db.prepare("SELECT * FROM messages ORDER BY id DESC").all());
+});
+
+app.delete("/api/admin/messages/:id", requireAdmin, (req, res) => {
+  const result = db.prepare("DELETE FROM messages WHERE id = ?").run(req.params.id);
+  if (!result.changes) return res.status(404).json({ error: "Message not found" });
+  res.json({ success: true });
+});
+
+app.post("/api/admin/certificates", requireAdmin, (req, res) => {
+  const { title, issuer, issued_on = "", credential_url = "", image_url = "", document_url = "", description = "", featured = 0 } = req.body || {};
+  if (!title || !issuer) return res.status(400).json({ error: "Title and issuer are required." });
+  const result = db.prepare(`
+    INSERT INTO certificates (title, issuer, issued_on, credential_url, image_url, document_url, description, featured)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(String(title).trim(), String(issuer).trim(), issued_on, credential_url, image_url, document_url, description, featured ? 1 : 0);
+  res.status(201).json(db.prepare("SELECT * FROM certificates WHERE id = ?").get(result.lastInsertRowid));
+});
+
+app.put("/api/admin/certificates/:id", requireAdmin, (req, res) => {
+  const { title, issuer, issued_on = "", credential_url = "", image_url = "", document_url = "", description = "", featured = 0 } = req.body || {};
+  if (!title || !issuer) return res.status(400).json({ error: "Title and issuer are required." });
+  const result = db.prepare(`
+    UPDATE certificates SET title=?, issuer=?, issued_on=?, credential_url=?, image_url=?, document_url=?, description=?, featured=? WHERE id=?
+  `).run(String(title).trim(), String(issuer).trim(), issued_on, credential_url, image_url, document_url, description, featured ? 1 : 0, req.params.id);
+  if (!result.changes) return res.status(404).json({ error: "Certificate not found" });
+  res.json(db.prepare("SELECT * FROM certificates WHERE id = ?").get(req.params.id));
+});
+
+app.delete("/api/admin/certificates/:id", requireAdmin, (req, res) => {
+  const result = db.prepare("DELETE FROM certificates WHERE id = ?").run(req.params.id);
+  if (!result.changes) return res.status(404).json({ error: "Certificate not found" });
+  res.json({ success: true });
 });
 
 app.post("/api/admin/projects", requireAdmin, (req, res) => {
